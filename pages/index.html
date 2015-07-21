@@ -1,6 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Flap Away</title>
+    <title>Flappy Bird ++</title>
+    <link rel="stylesheet" href="../assets/style.css">
+    <link rel="stylesheet" href="../lib/bootstrap.css">
 </head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1 id="flappy">Flappy Bird++</h1>
+    </div>
+    <div class="row">
+        <div class="col-md-7">
+            <div id="game"></div>
+        </div>
+        <div class="col-md-5">
+            <div class="jumbotron">
+
+            </div>
+        </div>
+    </div>
+</div>
+<div id="greeting">
+    <form id="greeting-form">
+        <div class="form-group">
+            <label for="fullName">What's your name?</label>
+            <input type="text" id="fullName" class="form-control"
+                   name="fullName" placeholder="Bob">
+            <input type="hidden" id="score" name="score" value="0">
+        </div>
+        <button class="btn btn-default" type="submit">OK</button>
+    </form>
+</div>
+<script src="../lib/jquery.js"></script>
+<script src="../lib/phaser.min.js"></script>
+<script src="../js/flappy.js"></script>
+</body>
 </html>

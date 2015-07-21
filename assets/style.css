@@ -1,0 +1,13 @@
+
+#greeting{
+    display:none;
+    position: absolute;
+    left: 40%;
+    top: 40%;
+    background: #fff;
+    width: auto;
+    height: auto;
+    border: 2px solid gray;
+    border-radius: 5px;
+    padding: 20px;
+}

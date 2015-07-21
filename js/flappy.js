@@ -1,14 +1,18 @@
 // the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
-
+jQuery("#greeting-form").on("submit", function(event_details) {
+    jQuery("#greeting").hide();                                1
+    event_details.preventDefault();
+    restart();
+});
 // Phaser parameters:
 // - game width
 // - game height
 // - renderer (go for Phaser.AUTO)
 // - element where the game will be drawn ('game')
 // - actions on the game state (or null for nothing)
-var w=790,h=400;
-var game = new Phaser.Game(w, h, Phaser.AUTO, 'game');//, stateActions);
+var w=650,h=400;
+var game = new Phaser.Game(w, h, Phaser.AUTO, 'game',null,true,true);//, stateActions);
 game.state.add("Game",stateActions);
 game.state.start("Game");
 var logo,background;
@@ -29,12 +33,16 @@ function preload() {
         game.load.image("Background",assetPath+"morning.png");
     else
         game.load.image("Background",assetPath+"night.png");
-    game.load.image("Flappy-Neutral",assetPath+"flappy_neutral.png");
-    game.load.image("Flappy-Up",assetPath+"flappy_up.png");
-    game.load.image("Flappy-Down",assetPath+"flappy_down.png");
+    var birds=["Red/","Blue/","Yellow/"];
+    var bird=birds[game.rnd.integerInRange(0,2)];
+    game.load.image("Flappy-Neutral",assetPath+"Birds/"+bird+"neutral.png");
+    game.load.image("Flappy-Up",assetPath+"Birds/"+bird+"down2.png");
+    game.load.image("Flappy-Down",assetPath+"Birds/"+bird+"down1.png");
     game.load.image("Floor",assetPath+"floor.png");
-    game.load.image("PipeTop",assetPath+"pipe-end2.png");
-    game.load.image("PipePiece",assetPath+"pipe2.png");
+    var pipes=["Green/","Red/"];
+    var pipe=pipes[game.rnd.integerInRange(0,1)];
+    game.load.image("PipeTop",assetPath+"Pipes/"+pipe+"end.png");
+    game.load.image("PipePiece",assetPath+"Pipes/"+pipe+"block.png");
     game.load.image("Logo",assetPath+"logo2.png");
     game.load.audio("Score",assetPath+"point.ogg");
 }
@@ -67,6 +75,7 @@ function resetGame() {
     pipes = [];
     point_lines = [];
     dying=0;
+    dead=0;
 }
 function restart(){
     game.state.start("Game");
@@ -92,12 +101,9 @@ function Jump(event){
     if(!game_started)
         startGame();
     player.loadTexture("Flappy-Down");
-    if(!dying) {
-        player.body.velocity.y = maxLiftSpeed;
-        goingUp = 1;
-    }else if (player.y>h){
-        restart();
-    }
+    player.body.velocity.y = maxLiftSpeed;
+    goingUp = 1;
+
 }
 function EndJump(event){
     player.loadTexture("Flappy-Up");
@@ -120,11 +126,13 @@ function hitPipe(){
     bounds[1].stopScroll();
     player.body.velocity.x=initialVelocity;
     player.body.velocity.y=1.5*maxLiftSpeed;
+    player.body.angularVelocity=1.5;
+    game.world.bringToTop(player);
 }
 function die(){
     dead=1;
-    game.physics.arcade.disable(player);
-    player.angle=-15;
+    $("#score").val(score.toString());//Submit Score
+    $("#greeting").show();
 }
 function generateRandomPipeSet(event){
     var start_y=game.rnd.integerInRange(100,h-100);
@@ -136,19 +144,20 @@ function createPipeSet(safe_y){
     var pipe2=createPipe(safe_y+75,1);//Create bottom pipe
     var pipeSet=pipe1.concat(pipe2);
     for (var i=0;i<pipeSet.length;i++){
-        pipeSet[i].anchor.setTo(0.5,1);
+        pipeSet[i].anchor.setTo(0.5,0.5);
         game.physics.arcade.enable(pipeSet[i]);
         pipeSet[i].body.velocity.x=pipeSpeed;
     }
     pipes=pipes.concat(pipeSet);
-    point_lines.push(w-10);
+    point_lines.push(w+50);
 }
 function createPipe(start_y,direction){
-    var pipe=[game.add.sprite(w+10,start_y,"PipeTop")];
+    var pipe=[game.add.sprite(w+25,start_y,"PipeTop")];
+    pipe[0].scale.y*=direction;
     var dist=(h*(direction>0))-(start_y+(25*direction));
     var number_of_pieces=Math.max(Math.abs(dist)/50)+1;
     for (var i=0;i<number_of_pieces;i++){
-        var part=game.add.sprite(w+10,start_y+(25+(i*50))*direction,"PipePiece");
+        var part=game.add.sprite(w+25,start_y+(25+(i*50))*direction,"PipePiece");
         pipe.push(part);
     }
     game.world.bringToTop(pipe[0]);
@@ -199,7 +208,7 @@ function updatePipes(){
 }
 function updateDyingPlayer(){
     player.angle+=15;
-    game.physics.arcade.collide(player,bounds[1],die);
+    game.physics.arcade.overlap(player,bounds[1],die);
 }
 function update() {
     if (game_started&&!dying) {
