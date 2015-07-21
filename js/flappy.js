@@ -1,9 +1,22 @@
 // the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
-jQuery("#greeting-form").on("submit", function(event_details) {
-    jQuery("#greeting").hide();                                1
-    event_details.preventDefault();
+$("#greeting-form").on("submit", function(event_details) {
+    $("#scoreBoard").append( "<li>" +
+    document.getElementById("fullName").value + ": " + document.getElementById("score").value +
+    "</li>");
+    $("#greeting").hide();
     restart();
+
+});
+
+$.get("/score", function(scores){
+    //$("#scoreBoard")="";
+    for (var i = 0; i < scores.length; i++) {
+        $("#scoreBoard").append(
+        "<li>" +
+        scores[i].name + ": " + scores[i].score +
+        "</li>");
+    }
 });
 // Phaser parameters:
 // - game width
@@ -107,6 +120,7 @@ function Jump(event){
 }
 function EndJump(event){
     player.loadTexture("Flappy-Up");
+    game.time.events.add(0.1*Phaser.Timer.SECOND, function(){player.loadTexture("Flappy-Neutral");});
 }
 function addPoint(){
     score++;
@@ -165,17 +179,10 @@ function createPipe(start_y,direction){
     return pipe;
 }
 function updatePlayer(){
-
-    if(shouldResetAnim){
-        shouldResetAnim--;
-        if(shouldResetAnim==0) {
-            player.loadTexture("Flappy-Neutral");
-        }
-    }
     if(goingUp){
         angleRatio = 0;
         goingUp=0;
-        shouldResetAnim=20;
+        shouldResetAnim=10;
     }else{
         angleRatio += 0.1;
         if (angleRatio > 1)

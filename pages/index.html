@@ -16,17 +16,19 @@
         </div>
         <div class="col-md-5">
             <div class="jumbotron">
-
+                <p>The highest scorers are:</p>
+                <ul id="scoreBoard">
+                </ul>
             </div>
         </div>
     </div>
 </div>
 <div id="greeting">
-    <form id="greeting-form">
+    <form id="greeting-form" method="post" action="/score">
         <div class="form-group">
-            <label for="fullName">What's your name?</label>
+            <label for="fullName">Submit High Score</label>
             <input type="text" id="fullName" class="form-control"
-                   name="fullName" placeholder="Bob">
+                   name="fullName" placeholder="Your Name">
             <input type="hidden" id="score" name="score" value="0">
         </div>
         <button class="btn btn-default" type="submit">OK</button>

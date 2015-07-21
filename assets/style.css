@@ -5,9 +5,17 @@
     left: 40%;
     top: 40%;
     background: #fff;
-    width: auto;
+    width: 200px;
     height: auto;
     border: 2px solid gray;
     border-radius: 5px;
     padding: 20px;
+    align-content: center;
+    margin: 0 auto;
+}
+#greeting-form{
+    align-content: center;
+    margin: 0 auto;
+    top:50%;
+    left:50%;
 }
