@@ -23,7 +23,6 @@ app.get("/score", function (request, response){
         });
 });
 app.post('/score', function(request){
-    console.log(request);
     var name=request.body.name;
     var score=request.body.score;
 

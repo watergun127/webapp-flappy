@@ -1,9 +1,5 @@
-// the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
 $("#greeting-form").on("submit", function(event_details) {
-    //$("#scoreBoard").append( "<li>" +
-    //document.getElementById("fullName").value + ": " + document.getElementById("score").value +
-    //"</li>");
     var new_score={name:document.getElementById("fullName").value,score:document.getElementById("score").value};
     scores.push(new_score);
     setScoreboard(scores);
@@ -46,14 +42,8 @@ function sortScores(){
         scores.push({name:highestScorers[scr][0],score:highestScorers[scr][1]});
     }
 }
-// Phaser parameters:
-// - game width
-// - game height
-// - renderer (go for Phaser.AUTO)
-// - element where the game will be drawn ('game')
-// - actions on the game state (or null for nothing)
 var w=650,h=400;
-var game = new Phaser.Game(w, h, Phaser.AUTO, 'game',null,true,true);//, stateActions);
+var game = new Phaser.Game(w, h, Phaser.AUTO, 'game',null,true,true);
 game.state.add("Game",stateActions);
 game.state.start("Game");
 var logo,background;
@@ -65,9 +55,7 @@ var bounds=[],pipes=[],point_lines=[];
 var hit_centre=0,game_started=0,dying=0,dead=0;
 var pipeGenerator;
 var scores=[];
-/*
- * Loads all resources for the game and gives them names.
- */
+
 function preload() {
     var back_bool=game.rnd.integerInRange(0,1);
     if(back_bool)
@@ -87,9 +75,7 @@ function preload() {
     game.load.image("Logo",assetPath+"logo2.png");
     game.load.audio("Score",assetPath+"point.ogg");
 }
-/*
- * Initialises the game. This function is only called once.
- */
+
 function create() {
     resetGame();
     game.physics.startSystem(Phaser.Physics.ARCADE);
@@ -172,7 +158,7 @@ function hitPipe(){
 }
 function die(){
     dead=1;
-    $("#score").val(score.toString());//Submit Score
+    $("#score").val(score.toString());
     $("#greeting").show();
 }
 function generateRandomPipeSet(){
@@ -180,9 +166,8 @@ function generateRandomPipeSet(){
     createPipeSet(start_y);
 }
 function createPipeSet(safe_y){
-    //Have 50px either side of safe_y for player to navigate
-    var pipe1=createPipe(safe_y-75,-1);//Create top pipe
-    var pipe2=createPipe(safe_y+75,1);//Create bottom pipe
+    var pipe1=createPipe(safe_y-75,-1);
+    var pipe2=createPipe(safe_y+75,1);
     var pipeSet=pipe1.concat(pipe2);
     for (var i=0;i<pipeSet.length;i++){
         pipeSet[i].anchor.setTo(0.5,0.5);
