@@ -15,7 +15,7 @@ $.get("/score", setScoreboard);
 function setScoreboard(scores_){
     scores=scores_;
     sortScores();
-    document.getElementById("scoreBoard").value="";
+    document.getElementById("scoreBoard").innerHTML="";
     for (var i = 0; i < scores.length; i++) {
         $("#scoreBoard").append(
             "<li>" +
