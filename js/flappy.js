@@ -1,6 +1,6 @@
 // the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
-$("#greeting-form").on("submit", function(event_details) {
+$("#greeting-form").on("submit", function() {
     //$("#scoreBoard").append( "<li>" +
     //document.getElementById("fullName").value + ": " + document.getElementById("score").value +
     //"</li>");
@@ -34,14 +34,11 @@ function sortScores(){
             scorers[scores[i].name]=score_;
         }
     }
-    console.log(scorers);
     var highestScorers = _.sortBy(_.pairs(scorers),function(score_){
         return -score_[1];
     });
-    console.log(highestScorers);
     scores=[];
-    for(var scr in highestScorers){
-        console.log(scr);
+    for(var scr=0;scr<highestScorers.length;scr++){
         scores.push({name:highestScorers[scr][0],score:highestScorers[scr][1]});
     }
 }
@@ -160,7 +157,7 @@ function hitBounds(){
 function hitPipe(){
     dying=1;
     delete(logo);
-    pipes.forEach(function(part,index,array){part.body.velocity.x=0;});
+    pipes.forEach(function(part){part.body.velocity.x=0;});
     game.time.events.remove(pipeGenerator);
     background.stopScroll();
     bounds[1].stopScroll();
@@ -174,7 +171,7 @@ function die(){
     $("#score").val(score.toString());//Submit Score
     $("#greeting").show();
 }
-function generateRandomPipeSet(event){
+function generateRandomPipeSet(){
     var start_y=game.rnd.integerInRange(100,h-100);
     createPipeSet(start_y);
 }
@@ -224,6 +221,7 @@ function updatePipes(){
     for (i=0;i<point_lines.length;i++){
         point_lines[i]+=pipeSpeed*game.time.elapsed/1000;
         if(point_lines[i]<=player.x){
+            delete(point_lines[i]);
             point_lines.splice(i,1);
             addPoint();
         }
