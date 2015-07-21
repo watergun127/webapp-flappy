@@ -10,13 +10,6 @@ app.use(bodyParser.urlencoded({extended:true}));
 app.get("/", function(request, response){
     response.sendFile(path.join(__dirname, "pages/index.html"));
 });
-function UrlExists(url)
-{
-    var http = new XMLHttpRequest();
-    http.open('HEAD', url, false);
-    http.send();
-    return http.status!=404;
-}
 app.get("/score", function (request, response){
         var reader = csv.createCsvFileReader("scores.csv");
         reader.setColumnNames(["name", "score"]);
@@ -29,8 +22,9 @@ app.get("/score", function (request, response){
             response.send(scores);
         });
 });
-app.post('/score', function(request, response){
-    var name=request.body.fullName;
+app.post('/score', function(request){
+    console.log(request);
+    var name=request.body.name;
     var score=request.body.score;
 
     var database = csv.createCsvFileWriter("scores.csv", {"flags": "a"});

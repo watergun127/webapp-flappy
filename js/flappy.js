@@ -1,17 +1,21 @@
 // the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
-$("#greeting-form").on("submit", function() {
+$("#greeting-form").on("submit", function(event_details) {
     //$("#scoreBoard").append( "<li>" +
     //document.getElementById("fullName").value + ": " + document.getElementById("score").value +
     //"</li>");
-    scores.push({name:document.getElementById("fullName").value,score:document.getElementById("score").value});
+    var new_score={name:document.getElementById("fullName").value,score:document.getElementById("score").value};
+    scores.push(new_score);
     setScoreboard(scores);
     $("#greeting").hide();
+    $.post("/score",new_score);
+    event_details.preventDefault();
     restart();
 
 });
 
 $.get("/score", setScoreboard);
+
 function setScoreboard(scores_){
     scores=scores_;
     sortScores();
