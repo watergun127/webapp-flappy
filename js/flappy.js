@@ -129,9 +129,10 @@ function createWalls(){
 function Jump(){
     if(!game_started)
         startGame();
-    player.loadTexture("Flappy-Down");
-    player.body.velocity.y = maxLiftSpeed;
-
+    if(!dying) {
+        player.loadTexture("Flappy-Down");
+        player.body.velocity.y = maxLiftSpeed;
+    }
 }
 function EndJump(){
     player.loadTexture("Flappy-Up");
