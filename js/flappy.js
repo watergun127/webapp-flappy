@@ -18,7 +18,7 @@ var goingUp=0;
 var assetPath="../assets/";
 var player,maxLiftSpeed=-300,gravity=800,targetRiseAngle=-25,fallAngleMod=45,rotateSpeed= 3,angleRatio=0.5,initialVelocity=150,pipeSpeed=-150;
 var bounds=[],pipes=[],point_lines=[];
-var hit_centre= 0,game_started= 0,shouldResetAnim= 0,dying=0;
+var hit_centre= 0,game_started= 0,shouldResetAnim= 0,dying= 0,dead=0;
 var pipeGenerator;
 /*
  * Loads all resources for the game and gives them names.
@@ -33,9 +33,9 @@ function preload() {
     game.load.image("Flappy-Up",assetPath+"flappy_up.png");
     game.load.image("Flappy-Down",assetPath+"flappy_down.png");
     game.load.image("Floor",assetPath+"floor.png");
-    game.load.image("PipeTop",assetPath+"pipe-end.png");
-    game.load.image("PipePiece",assetPath+"pipe.png");
-    game.load.image("Logo",assetPath+"logo.png");
+    game.load.image("PipeTop",assetPath+"pipe-end2.png");
+    game.load.image("PipePiece",assetPath+"pipe2.png");
+    game.load.image("Logo",assetPath+"logo2.png");
     game.load.audio("Score",assetPath+"point.ogg");
 }
 /*
@@ -95,7 +95,7 @@ function Jump(event){
     if(!dying) {
         player.body.velocity.y = maxLiftSpeed;
         goingUp = 1;
-    }else{
+    }else if (player.y>h){
         restart();
     }
 }
@@ -118,8 +118,13 @@ function hitPipe(){
     game.time.events.remove(pipeGenerator);
     background.stopScroll();
     bounds[1].stopScroll();
-    //player.angularVelocity=1;
-    //restart();
+    player.body.velocity.x=initialVelocity;
+    player.body.velocity.y=1.5*maxLiftSpeed;
+}
+function die(){
+    dead=1;
+    game.physics.arcade.disable(player);
+    player.angle=-15;
 }
 function generateRandomPipeSet(event){
     var start_y=game.rnd.integerInRange(100,h-100);
@@ -192,18 +197,16 @@ function updatePipes(){
     }
     game.physics.arcade.overlap(player,pipes,hitPipe);
 }
-function updateDeadPlayer(){
-    player.angle+=10;
-    player.scale.x+=0.5;
-    player.scale.y+=0.5;
-    game.world.bringToTop(player);
+function updateDyingPlayer(){
+    player.angle+=15;
+    game.physics.arcade.collide(player,bounds[1],die);
 }
 function update() {
     if (game_started&&!dying) {
         updatePlayer();
         updatePipes();
     }
-    if (dying){
-        updateDeadPlayer();
+    if (dying&&!dead){
+        updateDyingPlayer();
     }
 }
