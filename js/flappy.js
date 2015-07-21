@@ -84,10 +84,12 @@ function create() {
     logo.anchor.setTo(0.5,0.5);
     game.physics.arcade.enable(logo);
     createWalls();
+    //Mouse Click
     game.input.onDown.add(Jump);
     game.input.onUp.add(EndJump);
-    //game.input.keyboard.addKey(GoKey).onDown.add(Jump);
-    //game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
+    //Spacebar
+    game.input.keyboard.addKey(GoKey).onDown.add(Jump);
+    game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
 
 }
 function startGame(){
@@ -213,6 +215,7 @@ function updatePipes(){
     for (i=0;i<point_lines.length;i++){
         point_lines[i]+=pipeSpeed*game.time.elapsed/1000;
         if(point_lines[i]<=player.x){
+            point_lines[i].delete();
             delete(point_lines[i]);
             point_lines.splice(i,1);
             addPoint();
