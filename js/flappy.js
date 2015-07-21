@@ -34,12 +34,15 @@ function sortScores(){
             scorers[scores[i].name]=score_;
         }
     }
-    var highestScorers = _.sortBy(_.pairs(scorers),function(score){
-        return -score[1];
+    console.log(scorers);
+    var highestScorers = _.sortBy(_.pairs(scorers),function(score_){
+        return -score_[1];
     });
+    console.log(highestScorers);
     scores=[];
     for(var scr in highestScorers){
-        scores.push({name:scr[0],score:scr[1]});
+        console.log(scr);
+        scores.push({name:highestScorers[scr][0],score:highestScorers[scr][1]});
     }
 }
 // Phaser parameters:
