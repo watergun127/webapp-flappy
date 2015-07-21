@@ -1,23 +1,47 @@
 // the Game object used by the phaser.io library
 var stateActions = { preload: preload, create: create, update: update };
 $("#greeting-form").on("submit", function(event_details) {
-    $("#scoreBoard").append( "<li>" +
-    document.getElementById("fullName").value + ": " + document.getElementById("score").value +
-    "</li>");
+    //$("#scoreBoard").append( "<li>" +
+    //document.getElementById("fullName").value + ": " + document.getElementById("score").value +
+    //"</li>");
+    scores.push({name:document.getElementById("fullName").value,score:document.getElementById("score").value});
+    setScoreboard(scores);
     $("#greeting").hide();
     restart();
 
 });
 
-$.get("/score", function(scores){
-    //$("#scoreBoard")="";
+$.get("/score", setScoreboard);
+function setScoreboard(scores_){
+    scores=scores_;
+    sortScores();
+    document.getElementById("scoreBoard").value="";
     for (var i = 0; i < scores.length; i++) {
         $("#scoreBoard").append(
-        "<li>" +
-        scores[i].name + ": " + scores[i].score +
-        "</li>");
+            "<li>" +
+            scores[i].name + ": " + scores[i].score +
+            "</li>");
     }
-});
+}
+function sortScores(){
+    var scorers={},score_;
+    for (var i=0;i<scores.length;i++){
+        score_=parseInt(scores[i].score);
+        if (scorers[scores[i].name]!=undefined){
+            if(scorers[scores[i].name]<score_)
+                scorers[scores[i].name]=score_;
+        }else{
+            scorers[scores[i].name]=score_;
+        }
+    }
+    var highestScorers = _.sortBy(_.pairs(scorers),function(score){
+        return -score[1];
+    });
+    scores=[];
+    for(var scr in highestScorers){
+        scores.push({name:scr[0],score:scr[1]});
+    }
+}
 // Phaser parameters:
 // - game width
 // - game height
@@ -31,12 +55,12 @@ game.state.start("Game");
 var logo,background;
 var score = 0,scoreLabel;
 var GoKey=Phaser.Keyboard.SPACEBAR;
-var goingUp=0;
 var assetPath="../assets/";
-var player,maxLiftSpeed=-300,gravity=800,targetRiseAngle=-25,fallAngleMod=45,rotateSpeed= 3,angleRatio=0.5,initialVelocity=150,pipeSpeed=-150;
+var player,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,pipeSpeed=-150;
 var bounds=[],pipes=[],point_lines=[];
-var hit_centre= 0,game_started= 0,shouldResetAnim= 0,dying= 0,dead=0;
+var hit_centre=0,game_started=0,dying=0,dead=0;
 var pipeGenerator;
+var scores=[];
 /*
  * Loads all resources for the game and gives them names.
  */
@@ -110,15 +134,14 @@ function createWalls(){
     Floor.body.immovable=true;
     bounds=[Ceiling,Floor];
 }
-function Jump(event){
+function Jump(){
     if(!game_started)
         startGame();
     player.loadTexture("Flappy-Down");
     player.body.velocity.y = maxLiftSpeed;
-    goingUp = 1;
 
 }
-function EndJump(event){
+function EndJump(){
     player.loadTexture("Flappy-Up");
     game.time.events.add(0.1*Phaser.Timer.SECOND, function(){player.loadTexture("Flappy-Neutral");});
 }
@@ -179,16 +202,7 @@ function createPipe(start_y,direction){
     return pipe;
 }
 function updatePlayer(){
-    if(goingUp){
-        angleRatio = 0;
-        goingUp=0;
-        shouldResetAnim=10;
-    }else{
-        angleRatio += 0.1;
-        if (angleRatio > 1)
-            angleRatio = 1;
-    }
-    player.angle=targetRiseAngle+(fallAngleMod*angleRatio);
+    player.rotation = -Math.atan((player.body.velocity.y / maxLiftSpeed));
     if (player.x>=w/2&&!hit_centre) {
         player.body.velocity.x = 0;
         background.autoScroll(-initialVelocity/2,0);
