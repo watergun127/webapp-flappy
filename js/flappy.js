@@ -84,8 +84,10 @@ function create() {
     logo.anchor.setTo(0.5,0.5);
     game.physics.arcade.enable(logo);
     createWalls();
-    game.input.keyboard.addKey(GoKey).onDown.add(Jump);
-    game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
+    game.input.onDown.add(Jump);
+    game.input.onUp.add(EndJump);
+    //game.input.keyboard.addKey(GoKey).onDown.add(Jump);
+    //game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
 
 }
 function startGame(){
