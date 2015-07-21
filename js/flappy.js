@@ -209,13 +209,14 @@ function updatePlayer(){
 }
 function updatePipes(){
     for(var i=0;i<pipes.length;i++){
-        if (pipes[i].x+pipes[i].width<0)
-            pipes.splice(i,1);
+        if (pipes[i].x+pipes[i].width<0) {
+            pipes[i].delete();
+            pipes.splice(i, 1);
+        }
     }
     for (i=0;i<point_lines.length;i++){
         point_lines[i]+=pipeSpeed*game.time.elapsed/1000;
         if(point_lines[i]<=player.x){
-            point_lines[i].delete();
             delete(point_lines[i]);
             point_lines.splice(i,1);
             addPoint();
