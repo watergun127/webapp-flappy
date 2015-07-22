@@ -40,7 +40,7 @@ function sortScores(scores){
 }
 //Initialize constants
 console.log("Initializing constants");
-const w=650,h=400,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,
+const w=650,h=400,maxLiftSpeed=-300,gravity=800,initialVelocity=150,
     pipeSpeed=-150,assetPath="../assets/",GoKey=Phaser.Keyboard.SPACEBAR;
 //Initialize graphical components
 console.log("Initializing graphics");
@@ -53,13 +53,13 @@ console.log("Initializing lists");
 var bounds=[],pipes=[],point_lines=[];
 //Initialize timed events
 console.log("Initializing timed events");
-var pipeGenerator,asteroidGenerator;
+var pipeGenerator;
 //Initialize game vars
 console.log("Initializing game vars");
 var score = 0;
 var player,rocket;
 //Initialize boss vars
-var boss,boss_stage=1;
+var boss,boss_stage= 0,bossReadyToAttack=0;
 //Initialize game
 console.log("Initializing game");
 var game = new Phaser.Game(w, h, Phaser.AUTO, 'game');
@@ -175,12 +175,14 @@ function EndJump(){
     game.time.events.add(0.1*Phaser.Timer.SECOND, function(){player.loadTexture("Flappy-Neutral");});
 }
 function addPoint(){
-    score++;
-    scoreLabel.setText(score.toString());
-    game.world.bringToTop(scoreLabel);
-    game.sound.play("Score");
-    if(((score>=10&&game.rnd.integerInRange(0,5)==3)||score==15)&&!in_space)
-        spawnRocket();
+    if(!dying&&!dead) {
+        score++;
+        scoreLabel.setText(score.toString());
+        game.world.bringToTop(scoreLabel);
+        game.sound.play("Score");
+        if (((score >= 10 && game.rnd.integerInRange(0, 5) == 3) || score == 15) && !in_space)
+            spawnRocket();
+    }
 }
 function hitPipe(){
     game.sound.play("Die");
@@ -362,10 +364,11 @@ function goToSpace(){
     game.time.events.add(30*Phaser.Timer.SECOND, triggerBoss);
 }
 function generateAsteroid(){
+    var y;
     if(pipes.length>=1)
-        var y=game.rnd.pick([game.rnd.integerInRange(0,pipes[pipes.length-1].y-50),game.rnd.integerInRange(pipes[pipes.length-1].y+25,h)]);
+        y=game.rnd.pick([game.rnd.integerInRange(0,pipes[pipes.length-1].y-50),game.rnd.integerInRange(pipes[pipes.length-1].y+25,h)]);
     else
-        var y=game.rnd.integerInRange(0,h);
+        y=game.rnd.integerInRange(0,h);
     var asteroid=game.add.sprite(w+20,y,"SpaceAsteroid");
     game.physics.arcade.enable(asteroid);
     asteroid.body.velocity.x=-initialVelocity;
@@ -383,24 +386,52 @@ function triggerBoss(){
     game.time.events.stop(true);
 }
 function updateBoss(){
-    if (boss_stage==1) {
-        if(0<boss.x&&boss.x<25)
-            boss.x=25;
-        if (Math.abs(boss.y - player.y) < 80 && boss.x==25) {
-            console.log("Going!");
-            boss.x=25;
-            boss.body.velocity.x = 700;
-            boss.body.velocity.y = 0;
-        }else if(boss.x==25) {
-            boss.body.velocity.x=0;
-            if (boss.y < player.y)
-                boss.body.velocity.y = 50;
-            else if (boss.y > player.y)
-                boss.body.velocity.y = -50;
+    if(0<boss.x&&boss.x<25) {
+        boss.x = 25;
+        boss.body.velocity.x=0;
+    }
+    if(boss_stage>=0&&boss_stage<1) {
+        if(boss.body.velocity.y!=0) {
+            if (boss.y < boss.height/2 && boss.body.velocity.y < 0) {
+                boss.body.velocity.y = -boss.body.velocity.y;
+                boss_stage+=game.rnd.frac();
+
+            }else if (boss.y > h-boss.height/2 && boss.body.velocity.y > 0) {
+                boss.body.velocity.y = -boss.body.velocity.y;
+                boss_stage+=game.rnd.frac();
+            }
+            if (boss_stage>1)
+                boss_stage=1;
+        }else{
+            boss.body.velocity.y=-75;
+        }
+    }else if (boss_stage==1) {
+        if(!bossReadyToAttack) {
+            if (Math.abs(boss.y - player.y) < 80) {
+                bossReadyToAttack = 1;
+                console.log("Added bosscharge event");
+                game.time.events.add(Phaser.Timer.SECOND, bossCharge);
+                boss.body.velocity.y = 0;
+            }
+            else {
+                if (boss.y < player.y) {
+                    boss.body.velocity.y = 50;
+                } else if (boss.y > player.y) {
+                    boss.body.velocity.y = -50;
+                }
+            }
         }
         if (boss.x >= w-boss.width) {
             boss.x = boss.width;
-            //boss.body.velocity.x=0;
+            boss_stage=0;
+            bossReadyToAttack=0;
         }
     }
+}
+
+function bossCharge(){
+    console.log("Chargiung");
+    boss.body.velocity.x = 700;
+    boss.body.velocity.y = 0;
+    //bossReadyToAttack=0;
 }
