@@ -24,6 +24,8 @@ app.get("/score", function (request, response){
 });
 app.post('/score', function(request){
     var name=request.body.name;
+    //if(name=="")
+    //    return;
     var score=request.body.score;
 
     var database = csv.createCsvFileWriter("scores.csv", {"flags": "a"});

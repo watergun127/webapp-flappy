@@ -1,16 +1,12 @@
 var stateActions = { preload: preload, create: create, update: update };
 $("#greeting-form").on("submit", function(event_details) {
     var new_score={name:document.getElementById("fullName").value,score:document.getElementById("score").value};
-    scores.push(new_score);
-    setScoreboard(scores);
     $("#greeting").hide();
     $.post("/score",new_score);
     event_details.preventDefault();
     restart();
-
 });
 
-$.get("/score", setScoreboard);
 
 function setScoreboard(scores_){
     scores=scores_;
@@ -55,6 +51,7 @@ var bounds=[],pipes=[],point_lines=[];
 var hit_centre=0,game_started=0,dying=0,dead=0;
 var pipeGenerator;
 var scores=[];
+var graphics;
 
 function preload() {
     var back_bool=game.rnd.integerInRange(0,1);
@@ -82,6 +79,7 @@ function create() {
     background=game.add.tileSprite(0, 0,w,h, "Background");
     logo=game.add.sprite(w/2,h*0.25,"Logo");
     logo.anchor.setTo(0.5,0.5);
+    graphics=game.add.graphics(0,0);
     game.physics.arcade.enable(logo);
     createWalls();
     //Mouse Click
@@ -107,6 +105,7 @@ function resetGame() {
     point_lines = [];
     dying=0;
     dead=0;
+    $.get("/score", setScoreboard);
 }
 function restart(){
     game.state.start("Game");
@@ -115,7 +114,7 @@ function createPlayer(x,y){
     player=game.add.sprite(x,y,"Flappy-Neutral");
     player.anchor.setTo(0.5,0.5);
     player.scale.setTo(2.5,2.5);
-    game.physics.arcade.enable(player);
+    game.physics.arcade.enableBody(player);
     player.body.gravity.y=gravity;
     player.body.velocity.x=initialVelocity;
 }
@@ -131,7 +130,7 @@ function createWalls(){
 function Jump(){
     if(!game_started)
         startGame();
-    if(!dying) {
+    else if(!dying) {
         player.loadTexture("Flappy-Down");
         player.body.velocity.y = maxLiftSpeed;
     }
@@ -211,10 +210,6 @@ function updatePipes(){
     for(var i=0;i<pipes.length;i++){
         if (pipes[i].x+pipes[i].width<0) {
             pipes[i]=null;
-            //game.world.remove(pipes[i]);
-            //game.physics.arcade.disable(pipes[i]);
-            //delete(pipes[i]);
-            //game.world.destroy(pipes[i]);
             pipes.splice(i, 1);
         }
     }
@@ -226,7 +221,7 @@ function updatePipes(){
             addPoint();
         }
     }
-    game.physics.arcade.overlap(player,pipes,hitPipe);
+    game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInObject,player);
 }
 function updateDyingPlayer(){
     player.angle+=15;
@@ -240,4 +235,44 @@ function update() {
     if (dying&&!dead){
         updateDyingPlayer();
     }
+    graphics.clear();
+}
+function rotatedRectInObject(rotRect,object){
+    var corners=getCorners(rotRect);
+    var overlapping=0;
+    for (var i=0; i<4;i++)
+        overlapping=overlapping||pointInObject(corners[i],object);
+    return overlapping;
+}
+function getCorners(object){
+    var corners=[];
+    for(var i=0;i<4;i++){
+        var corner=getCorner(object,i);
+        corners.push(corner);
+    }
+    return corners;
+}
+function getCorner(object,id){
+    var x,y;
+    if (inArray(id,[1,2])) x=object.width; else x=0;
+    if (inArray(id,[2,3])) y=object.height; else y=0;
+    var rotX=x*Math.cos(object.angle)-y*Math.sin(object.angle);
+    var rotY=x*Math.sin(object.angle)+y*Math.cos(object.angle);
+    return [rotX+object.x,rotY+object.y];
+}
+function pointInObject(point,obj){
+    console.log(point,obj);
+    return ((obj.x<point[0]<obj.x+obj.width)&&(obj.y<point[1]<obj.y+obj.height));
+}
+function inArray(obj,array){
+    for(var i=0;i<array.length;i++){
+        if (array[i]==obj) return true;
+    }
+    return false;
+}
+function drawCircle(x,y,radius){
+    graphics.lineStyle(0);
+    graphics.beginFill(0xFFFF0B, 1.0);
+    graphics.drawCircle(x, y, radius);
+    graphics.endFill();
 }
