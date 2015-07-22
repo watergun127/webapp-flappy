@@ -58,6 +58,8 @@ var pipeGenerator,asteroidGenerator;
 console.log("Initializing game vars");
 var score = 0;
 var player,rocket;
+//Initialize boss vars
+var boss,boss_stage=1;
 //Initialize game
 console.log("Initializing game");
 var game = new Phaser.Game(w, h, Phaser.AUTO, 'game');
@@ -67,7 +69,7 @@ game.state.start("Game");
 function preload(){
     //Loading images
     console.log("Loading image resources");
-    var back=game.rnd.pick(["morning.png","night.png"])
+    var back=game.rnd.pick(["morning.png","night.png"]);
     game.load.image("Background",assetPath+back);
     var bird=game.rnd.pick(["Birds/Red/","Birds/Blue/","Birds/Yellow/"]);
     game.load.image("Flappy-Neutral",assetPath+bird+"neutral.png");
@@ -80,9 +82,10 @@ function preload(){
     game.load.image("Logo",assetPath+"logo2.png");
     game.load.image("SpaceRocket",assetPath+"Space/rocket.png");
     game.load.image("SpaceBackground",assetPath+"Space/background.png");
-    game.load.image("SpaceBoss",assetPath+"Space/boss.jpg");
+    game.load.image("SpaceBoss",assetPath+"Space/boss.png");
     game.load.image("SpaceAsteroid",assetPath+"Space/asteroid.png");
     game.load.image("SpaceDeath",assetPath+"Space/death.png");
+    game.load.image("SpaceMissile",assetPath+"Space/missile.png");
     //Loading audio
     console.log("Loading audio");
     game.load.audio("Score",assetPath+"sfx_point.ogg");
@@ -114,11 +117,13 @@ function create() {
     game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
     //Rocket Shortcut
     game.input.keyboard.addKey(Phaser.Keyboard.R).onDown.add(spawnRocket);
-
+    //Boss Shortcut
+    game.input.keyboard.addKey(Phaser.Keyboard.B).onDown.add(triggerBoss);
 }
 function startGame(){
     game_started=1;
     createPlayer(0,h/2);
+    game.time.events.start();
     scoreLabel=game.add.text(20, 20, score.toString());
 }
 function resetGame() {
@@ -194,6 +199,7 @@ function die(){
     dead=1;
     $("#score").val(score.toString());
     $("#greeting").show();
+    game.time.events.stop(true);
 }
 function generateRandomPipeSet(){
     var start_y=game.rnd.integerInRange(100,h-100);
@@ -282,6 +288,7 @@ function update() {
     if (game_started&&!dying) {
         updatePlayer();
         if (in_space) updateAsteroids();
+        if (boss!=null) updateBoss();
         else updatePipes();
     }
     if (dying&&!dead){
@@ -352,6 +359,7 @@ function goToSpace(){
     game.time.events.start();
     pipeGenerator=game.time.events.loop(Phaser.Timer.SECOND, generateAsteroid);
     game.time.events.loop(1.75*Phaser.Timer.SECOND, addPoint);
+    game.time.events.add(30*Phaser.Timer.SECOND, triggerBoss);
 }
 function generateAsteroid(){
     if(pipes.length>=1)
@@ -363,5 +371,36 @@ function generateAsteroid(){
     asteroid.body.velocity.x=-initialVelocity;
     asteroid.radius=asteroid.width/2;
     pipes.push(asteroid);
-    point_lines.push(w+20);
+    //point_lines.push(w+20);
+}
+function triggerBoss(){
+    boss=game.add.sprite(25,h/2,"SpaceBoss");
+    boss.anchor.setTo(0.5,0.5);
+    boss.scale.x+=0.6;
+    boss.scale.x=-boss.scale.x;
+    boss.scale.y+=0.6;
+    game.physics.arcade.enable(boss);
+    game.time.events.stop(true);
+}
+function updateBoss(){
+    if (boss_stage==1) {
+        if(0<boss.x&&boss.x<25)
+            boss.x=25;
+        if (Math.abs(boss.y - player.y) < 80 && boss.x==25) {
+            console.log("Going!");
+            boss.x=25;
+            boss.body.velocity.x = 700;
+            boss.body.velocity.y = 0;
+        }else if(boss.x==25) {
+            boss.body.velocity.x=0;
+            if (boss.y < player.y)
+                boss.body.velocity.y = 50;
+            else if (boss.y > player.y)
+                boss.body.velocity.y = -50;
+        }
+        if (boss.x >= w-boss.width) {
+            boss.x = boss.width;
+            //boss.body.velocity.x=0;
+        }
+    }
 }
