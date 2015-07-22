@@ -8,9 +8,8 @@ $("#greeting-form").on("submit", function(event_details) {
 });
 
 
-function setScoreboard(scores_){
-    scores=scores_;
-    sortScores();
+function setScoreboard(scores){
+    scores=sortScores(scores);
     document.getElementById("scoreBoard").innerHTML="";
     for (var i = 0; i < scores.length; i++) {
         $("#scoreBoard").append(
@@ -19,7 +18,7 @@ function setScoreboard(scores_){
             "</li>");
     }
 }
-function sortScores(){
+function sortScores(scores){
     var scorers={},score_;
     for (var i=0;i<scores.length;i++){
         score_=parseInt(scores[i].score);
@@ -37,57 +36,84 @@ function sortScores(){
     for(var scr=0;scr<highestScorers.length;scr++){
         scores.push({name:highestScorers[scr][0],score:highestScorers[scr][1]});
     }
+    return scores;
 }
-var w=650,h=400;
+//Initialize constants
+console.log("Initializing constants");
+var w=650,h=400,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,
+    pipeSpeed=-150,assetPath="../assets/",GoKey=Phaser.Keyboard.SPACEBAR;
+//Initialize graphical components
+console.log("Initializing graphics");
+var logo,background,scoreLabel;
+//Initialize flags
+console.log("Initializing flags");
+var hit_centre=0,game_started=0,dying=0,dead= 0,in_space=0;
+//Initialize lists
+console.log("Initializing lists");
+var bounds=[],pipes=[],point_lines=[];
+//Initialize timed events
+console.log("Initializing timed events");
+var pipeGenerator,asteroidGenerator;
+//Initialize game vars
+console.log("Initializing game vars");
+var score = 0;
+var player,rocket;
+//Initialize game
+console.log("Initializing game");
 var game = new Phaser.Game(w, h, Phaser.AUTO, 'game',null,true,true);
 game.state.add("Game",stateActions);
 game.state.start("Game");
-var logo,background;
-var score = 0,scoreLabel;
-var GoKey=Phaser.Keyboard.SPACEBAR;
-var assetPath="../assets/";
-var player,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,pipeSpeed=-150;
-var bounds=[],pipes=[],point_lines=[];
-var hit_centre=0,game_started=0,dying=0,dead=0;
-var pipeGenerator;
-var scores=[];
-var graphics;
 
-function preload() {
-    var back_bool=game.rnd.integerInRange(0,1);
-    if(back_bool)
-        game.load.image("Background",assetPath+"morning.png");
-    else
-        game.load.image("Background",assetPath+"night.png");
-    var birds=["Red/","Blue/","Yellow/"];
-    var bird=birds[game.rnd.integerInRange(0,2)];
-    game.load.image("Flappy-Neutral",assetPath+"Birds/"+bird+"neutral.png");
-    game.load.image("Flappy-Up",assetPath+"Birds/"+bird+"down2.png");
-    game.load.image("Flappy-Down",assetPath+"Birds/"+bird+"down1.png");
+function preload(){
+    //Loading images
+    console.log("Loading image resources");
+    var back=game.rnd.pick(["morning.png","night.png"])
+    game.load.image("Background",assetPath+back);
+    var bird=game.rnd.pick(["Birds/Red/","Birds/Blue/","Birds/Yellow/"]);
+    game.load.image("Flappy-Neutral",assetPath+bird+"neutral.png");
+    game.load.image("Flappy-Up",assetPath+bird+"down2.png");
+    game.load.image("Flappy-Down",assetPath+bird+"down1.png");
     game.load.image("Floor",assetPath+"floor.png");
-    var pipes=["Green/","Red/"];
-    var pipe=pipes[game.rnd.integerInRange(0,1)];
-    game.load.image("PipeTop",assetPath+"Pipes/"+pipe+"end.png");
-    game.load.image("PipePiece",assetPath+"Pipes/"+pipe+"block.png");
+    var pipe=game.rnd.pick(["Pipes/Green/","Pipes/Red/"]);
+    game.load.image("PipeTop",assetPath+pipe+"end.png");
+    game.load.image("PipePiece",assetPath+pipe+"block.png");
     game.load.image("Logo",assetPath+"logo2.png");
-    game.load.audio("Score",assetPath+"point.ogg");
+    game.load.image("SpaceRocket",assetPath+"Space/rocket.png");
+    game.load.image("SpaceBackground",assetPath+"Space/background.png");
+    game.load.image("SpaceBoss",assetPath+"Space/boss.jpg");
+    game.load.image("SpaceAsteroid",assetPath+"Space/asteroid.png");
+    game.load.image("SpaceDeath",assetPath+"Space/death.png");
+    //Loading audio
+    console.log("Loading audio");
+    game.load.audio("Score",assetPath+"sfx_point.ogg");
+    game.load.audio("Flap",assetPath+"sfx_wing.ogg");
+    game.load.audio("Die",assetPath+"sfx_hit.ogg");
+    game.load.audio("Missile", assetPath+"/Space/missile.mp3");
+    game.load.audio("Takeoff", assetPath+"/Space/comet.mp3");
 }
 
 function create() {
+    //Create bits
+    console.log("Creating");
     resetGame();
     game.physics.startSystem(Phaser.Physics.ARCADE);
+    console.log("Creating background");
     background=game.add.tileSprite(0, 0,w,h, "Background");
+    console.log("Creating logo");
     logo=game.add.sprite(w/2,h*0.25,"Logo");
     logo.anchor.setTo(0.5,0.5);
-    graphics=game.add.graphics(0,0);
     game.physics.arcade.enable(logo);
+    console.log("Creating walls");
     createWalls();
+    console.log("Creating callbacks");
     //Mouse Click
     game.input.onDown.add(Jump);
     game.input.onUp.add(EndJump);
     //Spacebar
     game.input.keyboard.addKey(GoKey).onDown.add(Jump);
     game.input.keyboard.addKey(GoKey).onUp.add(EndJump);
+    //Rocket Shortcut
+    game.input.keyboard.addKey(Phaser.Keyboard.R).onDown.add(spawnRocket);
 
 }
 function startGame(){
@@ -105,6 +131,7 @@ function resetGame() {
     point_lines = [];
     dying=0;
     dead=0;
+    in_space=0;
     $.get("/score", setScoreboard);
 }
 function restart(){
@@ -132,6 +159,7 @@ function Jump(){
         startGame();
     else if(!dying) {
         player.loadTexture("Flappy-Down");
+        game.sound.play("Flap");
         player.body.velocity.y = maxLiftSpeed;
     }
 }
@@ -144,11 +172,12 @@ function addPoint(){
     scoreLabel.setText(score.toString());
     game.world.bringToTop(scoreLabel);
     game.sound.play("Score");
-}
-function hitBounds(){
-    angleRatio=0.4;
+    if((score>=10&&game.rnd.integerInRange(0,5)==3)||score==15)
+        spawnRocket();
 }
 function hitPipe(){
+    deathY=player.y;
+    game.sound.play("Die");
     dying=1;
     delete(logo);
     pipes.forEach(function(part){part.body.velocity.x=0;});
@@ -194,17 +223,21 @@ function createPipe(start_y,direction){
 
     return pipe;
 }
-function updatePlayer(){
+function updatePlayer() {
     player.rotation = -Math.atan((player.body.velocity.y / maxLiftSpeed));
-    if (player.x>=w/2&&!hit_centre) {
+    if (player.x >= w / 2 && !hit_centre) {
         player.body.velocity.x = 0;
-        background.autoScroll(-initialVelocity/2,0);
+        background.autoScroll(-initialVelocity / 2, 0);
         bounds[1].autoScroll(-initialVelocity, 0);
-        pipeGenerator=game.time.events.loop(1.75 * Phaser.Timer.SECOND, generateRandomPipeSet);
-        logo.body.velocity.x=-initialVelocity;
+        if (!in_space)
+            pipeGenerator = game.time.events.loop(1.75 * Phaser.Timer.SECOND, generateRandomPipeSet);
+        logo.body.velocity.x = -initialVelocity;
         hit_centre = 1;
     }
-    game.physics.arcade.collide(player,bounds,hitBounds);
+    game.physics.arcade.collide(player, bounds);
+    if (!in_space)
+        game.physics.arcade.overlap(player, rocket, goToSpace, rotatedRectInObject);
+
 }
 function updatePipes(){
     for(var i=0;i<pipes.length;i++){
@@ -221,27 +254,44 @@ function updatePipes(){
             addPoint();
         }
     }
-    game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInObject,player);
+    game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInObject);
+
 }
 function updateDyingPlayer(){
     player.angle+=15;
     game.physics.arcade.overlap(player,bounds[1],die);
 }
+function updateAsteroids(){
+    for(var i=0;i<pipes.length;i++){
+        if (pipes[i].x+pipes[i].width<0) {
+            pipes[i]=null;
+            pipes.splice(i, 1);
+        }
+    }
+    game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInCircle);
+}
 function update() {
     if (game_started&&!dying) {
         updatePlayer();
-        updatePipes();
+        if (in_space) updateAsteroids();
+        else updatePipes();
     }
     if (dying&&!dead){
         updateDyingPlayer();
     }
-    graphics.clear();
 }
 function rotatedRectInObject(rotRect,object){
     var corners=getCorners(rotRect);
     var overlapping=0;
     for (var i=0; i<4;i++)
-        overlapping=overlapping||pointInObject(corners[i],object);
+        overlapping=overlapping||pointInRectObject(corners[i],object);
+    return overlapping;
+}
+function rotatedRectInCircle(rotRect,object){
+    var corners=getCorners(rotRect);
+    var overlapping=0;
+    for (var i=0; i<4;i++)
+        overlapping=overlapping||pointInCircleObject(corners[i],object);
     return overlapping;
 }
 function getCorners(object){
@@ -260,9 +310,11 @@ function getCorner(object,id){
     var rotY=x*Math.sin(object.angle)+y*Math.cos(object.angle);
     return [rotX+object.x,rotY+object.y];
 }
-function pointInObject(point,obj){
-    console.log(point,obj);
+function pointInRectObject(point,obj){
     return ((obj.x<point[0]<obj.x+obj.width)&&(obj.y<point[1]<obj.y+obj.height));
+}
+function pointInCircleObject(point,obj){
+    return Math.sqrt( (point[0]-obj.x)*(point[0]-obj.x) + (point[1]-obj.y)*(point[1]-obj.y) );
 }
 function inArray(obj,array){
     for(var i=0;i<array.length;i++){
@@ -270,9 +322,33 @@ function inArray(obj,array){
     }
     return false;
 }
-function drawCircle(x,y,radius){
-    graphics.lineStyle(0);
-    graphics.beginFill(0xFFFF0B, 1.0);
-    graphics.drawCircle(x, y, radius);
-    graphics.endFill();
+function spawnRocket(){
+    game.time.events.stop(true);
+    rocket=game.add.sprite(w+150,h/2,"SpaceRocket");
+    rocket.anchor.setTo(0.5,0.5);
+    game.physics.arcade.enable(rocket);
+    rocket.body.velocity.x=-initialVelocity;
+}
+function goToSpace(){
+    in_space=1;
+    pipes.forEach(function(part){part=null;console.log(part)});
+    pipes.length=0;
+    background.loadTexture("SpaceBackground");
+    bounds[1].loadTexture("SpaceBackground");
+    bounds[1].y=h;
+    rocket.x=0;
+    rocket.body.velocity.y=-500;
+    player.x=20;
+    player.body.velocity.x=initialVelocity;
+    hit_centre=0;
+    game.time.events.start();
+    pipeGenerator=game.time.events.loop(Phaser.Timer.SECOND, generateAsteroid);
+}
+function generateAsteroid(){
+    var y=game.rnd.pick([game.rnd.integerInRange(0,player.y-50),game.rnd.integerInRange(player.y+25,h)]);
+    var asteroid=game.add.sprite(w+20,y,"SpaceAsteroid");
+    game.physics.arcade.enable(asteroid);
+    asteroid.body.velocity.x=-initialVelocity;
+    asteroid.radius=asteroid.width/2;
+    pipes.push(asteroid);
 }
