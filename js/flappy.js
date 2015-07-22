@@ -210,6 +210,7 @@ function updatePlayer(){
 function updatePipes(){
     for(var i=0;i<pipes.length;i++){
         if (pipes[i].x+pipes[i].width<0) {
+            game.world.remove(pipes[i]);
             game.world.destroy(pipes[i]);
             pipes.splice(i, 1);
         }
