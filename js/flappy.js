@@ -180,7 +180,7 @@ function addPoint(){
         scoreLabel.setText(score.toString());
         game.world.bringToTop(scoreLabel);
         game.sound.play("Score");
-        if (((score >= 10 && game.rnd.integerInRange(0, 5) == 3) || score == 15) && !in_space)
+        if ((score==2) && rocket==null)
             spawnRocket();
     }
 }
@@ -195,6 +195,8 @@ function hitPipe(){
     player.body.velocity.x=initialVelocity;
     player.body.velocity.y=1.5*maxLiftSpeed;
     player.body.angularVelocity=1.5;
+    if (rocket!=null)
+        rocket.body.velocity.x=0;
     game.world.bringToTop(player);
 }
 function die(){
@@ -348,7 +350,7 @@ function spawnRocket(){
 }
 function goToSpace(){
     in_space=1;
-    pipes.forEach(function(part){part=null;console.log(part)});
+    pipes.forEach(function(part){part=null;});
     pipes.length=0;
     background.loadTexture("SpaceBackground");
     bounds[1].loadTexture("SpaceBackground");
@@ -358,6 +360,7 @@ function goToSpace(){
     player.x=20;
     player.body.velocity.x=initialVelocity;
     hit_centre=0;
+    game.time.events.stop(true);
     game.time.events.start();
     pipeGenerator=game.time.events.loop(Phaser.Timer.SECOND, generateAsteroid);
     game.time.events.loop(1.75*Phaser.Timer.SECOND, addPoint);
