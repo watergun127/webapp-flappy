@@ -40,14 +40,14 @@ function sortScores(scores){
 }
 //Initialize constants
 console.log("Initializing constants");
-var w=650,h=400,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,
+const w=650,h=400,maxLiftSpeed=-300,gravity=800,angleRatio=0.5,initialVelocity=150,
     pipeSpeed=-150,assetPath="../assets/",GoKey=Phaser.Keyboard.SPACEBAR;
 //Initialize graphical components
 console.log("Initializing graphics");
 var logo,background,scoreLabel;
 //Initialize flags
 console.log("Initializing flags");
-var hit_centre=0,game_started=0,dying=0,dead= 0,in_space=0;
+var hit_centre=0,game_started=0,dying=0,dead=0,in_space=0;
 //Initialize lists
 console.log("Initializing lists");
 var bounds=[],pipes=[],point_lines=[];
@@ -60,7 +60,7 @@ var score = 0;
 var player,rocket;
 //Initialize game
 console.log("Initializing game");
-var game = new Phaser.Game(w, h, Phaser.AUTO, 'game',null,true,true);
+var game = new Phaser.Game(w, h, Phaser.AUTO, 'game');
 game.state.add("Game",stateActions);
 game.state.start("Game");
 
@@ -129,6 +129,7 @@ function resetGame() {
     delete(scoreLabel);
     pipes = [];
     point_lines = [];
+    bounds=[];
     dying=0;
     dead=0;
     in_space=0;
@@ -164,7 +165,8 @@ function Jump(){
     }
 }
 function EndJump(){
-    player.loadTexture("Flappy-Up");
+    if(player!=null)
+        player.loadTexture("Flappy-Up");
     game.time.events.add(0.1*Phaser.Timer.SECOND, function(){player.loadTexture("Flappy-Neutral");});
 }
 function addPoint(){
@@ -172,11 +174,10 @@ function addPoint(){
     scoreLabel.setText(score.toString());
     game.world.bringToTop(scoreLabel);
     game.sound.play("Score");
-    if((score>=10&&game.rnd.integerInRange(0,5)==3)||score==15)
+    if(((score>=10&&game.rnd.integerInRange(0,5)==3)||score==15)&&!in_space)
         spawnRocket();
 }
 function hitPipe(){
-    deathY=player.y;
     game.sound.play("Die");
     dying=1;
     delete(logo);
@@ -255,17 +256,24 @@ function updatePipes(){
         }
     }
     game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInObject);
-
 }
 function updateDyingPlayer(){
     player.angle+=15;
     game.physics.arcade.overlap(player,bounds[1],die);
 }
 function updateAsteroids(){
-    for(var i=0;i<pipes.length;i++){
-        if (pipes[i].x+pipes[i].width<0) {
-            pipes[i]=null;
+    for(var i=0;i<pipes.length;i++) {
+        if (pipes[i].x + pipes[i].width < 0) {
+            pipes[i] = null;
             pipes.splice(i, 1);
+        }
+    }
+    for (i=0;i<point_lines.length;i++){
+        point_lines[i]+=pipeSpeed*game.time.elapsed/1000;
+        if(point_lines[i]<=player.x){
+            delete(point_lines[i]);
+            point_lines.splice(i,1);
+            addPoint();
         }
     }
     game.physics.arcade.overlap(player,pipes,hitPipe,rotatedRectInCircle);
@@ -314,7 +322,7 @@ function pointInRectObject(point,obj){
     return ((obj.x<point[0]<obj.x+obj.width)&&(obj.y<point[1]<obj.y+obj.height));
 }
 function pointInCircleObject(point,obj){
-    return Math.sqrt( (point[0]-obj.x)*(point[0]-obj.x) + (point[1]-obj.y)*(point[1]-obj.y) );
+    return Math.sqrt( (point[0]-obj.x)*(point[0]-obj.x) + (point[1]-obj.y)*(point[1]-obj.y) )<=obj.radius;
 }
 function inArray(obj,array){
     for(var i=0;i<array.length;i++){
@@ -343,12 +351,17 @@ function goToSpace(){
     hit_centre=0;
     game.time.events.start();
     pipeGenerator=game.time.events.loop(Phaser.Timer.SECOND, generateAsteroid);
+    game.time.events.loop(1.75*Phaser.Timer.SECOND, addPoint);
 }
 function generateAsteroid(){
-    var y=game.rnd.pick([game.rnd.integerInRange(0,player.y-50),game.rnd.integerInRange(player.y+25,h)]);
+    if(pipes.length>=1)
+        var y=game.rnd.pick([game.rnd.integerInRange(0,pipes[pipes.length-1].y-50),game.rnd.integerInRange(pipes[pipes.length-1].y+25,h)]);
+    else
+        var y=game.rnd.integerInRange(0,h);
     var asteroid=game.add.sprite(w+20,y,"SpaceAsteroid");
     game.physics.arcade.enable(asteroid);
     asteroid.body.velocity.x=-initialVelocity;
     asteroid.radius=asteroid.width/2;
     pipes.push(asteroid);
+    point_lines.push(w+20);
 }
